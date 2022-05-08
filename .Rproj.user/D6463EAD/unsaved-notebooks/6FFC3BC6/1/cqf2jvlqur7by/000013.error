@@ -1,0 +1,1 @@
+{"frames":[],"message":"Error: unexpected symbol in:\n\"posts_test$text <- str_replace_all(posts_test$text, fixed(setNames(master$Symbol, master$Name))\ncorp\"\n"}

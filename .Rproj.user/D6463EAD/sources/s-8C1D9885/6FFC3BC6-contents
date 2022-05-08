@@ -1,0 +1,89 @@
+---
+title: "R_test"
+author: "AZM"
+date: "5/7/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<H1> Library Load in </H1>
+
+First things first, let's grab 
+  1. RedditExtractoR for scraping reddit posts 
+  2. ttr for quant trading info & ticker lists
+  3. 
+
+```{r}
+library(RedditExtractoR)
+library(TTR)
+library(curl)
+library(tidyverse)
+library(quanteda)
+library(readr)
+
+library(dplyr)
+
+library(tm)
+
+library(SnowballC)
+```
+```{r}
+
+```
+
+
+```{r}
+master <- TTR::stockSymbols(exchange = c("AMEX", "NASDAQ", "NYSE", "ARCA", "BATS", "IEX"))[,c('Name', 'Symbol')]
+```
+```{r}
+master
+master[master$Symbol == "MGD"]
+```
+
+
+```{r}
+posts <- find_thread_urls(subreddit="wallstreetbets", sort_by="new", period="hour")
+```
+
+```{r}
+posts_test <- head(posts)
+posts_test
+
+```
+```{r}
+posts_test$text <- str_replace_all(posts_test$text, setNames(master$Symbol, master$Name))
+corp <- corpus(posts_test, docid_field = "title", text_field = "text")
+toks2 <- tokens_replace(toks1, taxwords, lemma, valuetype = "fixed")
+```
+
+```{r}
+x <- kwic(tokens(corp, remove_punct = TRUE, remove_numbers = TRUE), 
+          pattern = master$Symbol,
+          window = 3, case_insensitive = FALSE,
+          )
+as.data.frame(x)
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,73 @@
+---
+title: "Assignmet 2-Alex Moyse"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+<H2> Introduction
+<H3> I really wanted to work with a slightly larger data set so I opted to pull the The Movies Data set from Kaggle. It is a Public Domain License, which has No Copyright. This data set contains movies, reviews, summaries, genres and more. It is a great method to learn how to write with a recommendation bot. 
+
+<H3> We will first initialize our DB libraries
+```{r}
+library(tidyverse)
+library(RMariaDB)
+library(DBI)
+```
+
+
+<H3> We will then define the connection to the container. In terms of implemented Security, the container forces a localhost only connection, which for the purpose of this demo, allows for easy, rapid deployments with an effective yet simple security implementation. I prefer listing tables here as it easily demonstrates a connect to a DB, and demonstrates the current status of the container.
+
+```{r}
+con <- dbConnect(RMariaDB::MariaDB(), username="root", password="TestCase123.", dbname ="review_db", host="localhost")
+dbListTables(con)
+```
+
+<H3> What is occurring here is that we're reading a table named ratings, and we are loading it into a data frame in memory. Since ratings link a Movie and a value 1-5, we are going to summarize the results in a singular table, linking movieID and its average rating.
+
+```{r}
+avg_ratings <- dbReadTable(con = con, name = 'ratings')
+agg_ratings <- aggregate(avg_ratings$rating, list(avg_ratings$movieId), FUN=mean)
+colnames(agg_ratings) <- c('Movie_ID','Rating')
+head(agg_ratings)
+```
+
+<h3> At this point, we are going to read the movies_metadata table into a dataframe memory. This database is fairly large, and since it's loaded in in bulk, its not the most effective operation if you are hardware limited, but great in terms of managing number of connections.
+
+```{r}
+movie_metadata <- dbReadTable(con = con, name = 'movies_metadata')
+```
+
+Now I want to see the trend in movie ratings over time. So I need to join the movie_metadata Dataframe, which has the release date in it, to the average rating. For any resulting joins that do not have values, I will drop and exclude them from the set. 
+
+```{r}
+agg_ratings$title <- "NAN"
+agg_ratings$Movie_ID <- as.character(agg_ratings$Movie_ID)
+combo <-left_join(agg_ratings, movie_metadata, by = c("Movie_ID" = "id"))
+combo$release_year = substr(combo$release_date,1,4)
+movie_ratings = subset(combo, select = c(original_title,  Rating, release_year) )
+clean_movie_ratings <- na.omit(movie_ratings) 
+head(clean_movie_ratings)
+```
+
+At this point, I just want to visualize the data a bit, and see if there is anything that sticks out to me as interesting. 
+
+```{r, echo=FALSE}
+plot(x=clean_movie_ratings$release_year, y=clean_movie_ratings$Rating,
+pch=18,
+cex=1,
+xlab="Year", ylab="Rating",
+main="Year Vs Rating",
+)
+```
+
+At this point, we have a simple chart, fully loaded set, and have cleaned the basic irregularities from the data. Further steps may by to remove older movies, because silent movies may have biased results due to the typical population who watch them are hyper focused on them. In addition, it may make sense to remove movies under a certain number of views. 
+
+<H2>References
+<H3>The Movie Dataset-https://www.kaggle.com/rounakbanik/the-movies-dataset
+<H3>RMariaDB-https://cran.r-project.org/web/packages/RMariaDB/RMariaDB.pdf
+
+

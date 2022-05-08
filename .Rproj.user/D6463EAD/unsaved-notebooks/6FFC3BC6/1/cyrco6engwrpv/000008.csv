@@ -1,0 +1,39 @@
+"0","library(RedditExtractoR)"
+"0","library(TTR)"
+"0","library(curl)"
+"0","library(tidyverse)"
+"0","library(quanteda)"
+"0","library(readr)"
+"0",""
+"0","library(dplyr)"
+"0",""
+"0","library(tm)"
+"2","Warning:"
+"2"," package ‘tm’ was built under R version 4.1.3
+"
+"2","Loading required package: NLP
+"
+"2","
+Attaching package: ‘NLP’
+
+"
+"2","The following objects are masked from ‘package:quanteda’:
+
+    meta, meta<-
+
+"
+"2","The following object is masked from ‘package:ggplot2’:
+
+    annotate
+
+"
+"2","
+Attaching package: ‘tm’
+
+"
+"2","The following object is masked from ‘package:quanteda’:
+
+    stopwords
+
+"
+"0","library(SnowballC)"

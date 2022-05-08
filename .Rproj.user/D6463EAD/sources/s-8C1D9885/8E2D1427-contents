@@ -1,0 +1,198 @@
+---
+title: Data 607 Project-4
+author: 
+output: 
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+---
+
+<H1> The Library read in </H1>
+
+So in terms of predictors, there are a lot of options with cloud tie ins, but for this specific class, I wanted to try and implement an entirely on-prem solution. 
+
+```{r}
+library(readr)
+
+library(dplyr)
+
+library(tm)
+
+library(SnowballC)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<H1> Data Read in </H1>
+
+
+First things first, we're going to grab our sample data from Kaggle (https://www.kaggle.com/datasets/kazanova/sentiment140)
+
+Then we are going to read in the first 10,000 rows as the entire set is massive. In order to make sure the rows are reasonably random, we're going to sample_n them to ensure we get a representative set. 
+
+
+```{r}
+
+raw <- read_csv("source_data.csv", col_names=c("Sentiment", "id", "dt", "status", "User", "tweet"))
+raw <- sample_n(raw, 10000)
+raw
+```
+
+<H1> Corpus creation </H1>
+
+<H2> At this point, we will create a corpus from the representative sample of data. </H2>
+
+```{r}
+corpus = Corpus(VectorSource(raw$tweet))
+corpus[[1]][1]
+```
+
+<H2> Corpus Cleaning </H2>
+
+Like any good data pipeline process, first you read the data, then you subset it (if needed), then clean the data & finally, process it. Here, we're removing punctuation, tokenizing non-utf8 characters, english stopwords, and finally we're getting to the root of every words (ie decreasing variability since)
+
+```{r}
+#my_stopwords <- c("á","€")
+#corpus <- tm_map(corpus, removeWords, my_stopwords)
+
+corpus = tm_map(corpus, removePunctuation)
+
+corpus = tm_map(corpus, function(x) iconv(enc2utf8(x), sub = "byte"))
+
+
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+
+corpus = tm_map(corpus, stemDocument)
+
+corpus[[1]][1]  
+```
+<H1> Document Term Matrix  </H1>
+
+<H2> DTM Creation </H2>
+
+At this point we're going to create a DTM from a corpus.
+
+```{r}
+frequencies = DocumentTermMatrix(corpus)
+```
+
+<H2> DTM Cleaning </H2>
+
+
+Then we are going to remove terms that do not occur frequently
+
+```{r}
+reduced = removeSparseTerms(frequencies, 0.995)
+```
+
+
+Now we are ging to convert the DTM into a matrix
+
+```{r}
+reducedDf = as.data.frame(as.matrix(reduced))
+
+colnames(reducedDf) = make.names(colnames(reducedDf))
+
+```
+
+
+And after some prettifying, here is what that matrix looks like. 
+
+```{r}
+reducedDf
+```
+
+<H1> Baseline accuracy </H1>
+
+Practically we are going to augment the sentiment back in, so that we can figure out how the high probability words determine sentiment. 
+
+```{r}
+reducedDf$recommended_id = raw$Sentiment
+prop.table(table(reducedDf$recommended_id)) 
+```
+<H1> Test/Train split </H1>
+
+At this point we have our data with sentiment, we're going to split it into test and train data. 
+
+```{r}
+library(caTools)
+
+set.seed(100)
+
+split = sample.split(reducedDf$recommended_id, SplitRatio = 0.7)
+
+train = subset(reducedDf, split==TRUE)
+
+test = subset(reducedDf, split==FALSE)
+```
+
+
+<H1> Random Forest </H1> 
+
+We're going to use random forest as the classifier as it is a solid broad approach. 
+
+```{r}
+library(randomForest)
+set.seed(100)
+
+train$recommended_id = as.factor(train$recommended_id)
+
+test$recommended_id = as.factor(test$recommended_id )
+
+ 
+
+#Lines 5 to 7
+
+RF_model = randomForest(recommended_id ~ ., data=train)
+
+predictRF = predict(RF_model, newdata=test)
+
+classifier_result = table(test$recommended_id, predictRF)
+```
+<H1> Metrics </H1>
+
+So I wanted to see how effective my classifier was as well as how accurate the data was. First things first, in our sample, we had about a 50/50 split in regards to the distrubution of positive vs negative. The results of our classifier was around 20% better, which is not really good. 
+
+So first things first, I wanted to look at the precision and recall, which is inline  but doesn't show issues predicting a specific class. 
+
+Then I moved to kappa, which is a metric comparing the prediction and the labels. THe lower the kappa value, the more liekly a random classifier would be beneficial. The Kappa value for this set is fairly low at 37.6% 
+
+```{r}
+classifier_result = table(test$recommended_id, predictRF)
+ n = sum(classifier_result) # number of instances
+ nc = nrow(classifier_result) # number of classes
+ diag = diag(classifier_result) # number of correctly classified instances per class 
+ rowsums = apply(classifier_result, 1, sum) # number of instances per class
+ colsums = apply(classifier_result, 2, sum) # number of predictions per class
+ p = rowsums / n # distribution of instances over the actual classes
+ q = colsums / n # distribution of instances over the predicted classes
+ 
+ 
+ accuracy = sum(diag) / n 
+ accuracy
+ precision = diag / colsums 
+ recall = diag / rowsums 
+ f1 = 2 * precision * recall / (precision + recall) 
+
+ data.frame(precision, recall, f1) 
+
+  expAccuracy = sum(p*q)
+ kappa = (accuracy - expAccuracy) / (1 - expAccuracy)
+
+  kappa 
+```
+
+
+<H1> Conclusion </H1>
+
+In conclusion, this dataset did a fantastic job of demonstrating how a classifier can work, but it really needs more tuning to ensure a higher degree of accuracy. With the low Kappa score, it indicates that tweets are hard to consistently gauge sentiment on in regards to this methodogy, and a different approach may be better. 
+
+
+<H1> References </H1>
+
+Data:
+Go, A., Bhayani, R. and Huang, L., 2009. Twitter sentiment classification using distant supervision. CS224N Project Report, Stanford, 1(2009), p.12.
+

@@ -1,0 +1,5 @@
+"0","x <- kwic(tokens(corp, remove_punct = TRUE, remove_numbers = TRUE), "
+"0","          pattern = master$Symbol,"
+"0","          window = 3, case_insensitive = FALSE,"
+"0","          )"
+"0","as.data.frame(x)"

@@ -1,0 +1,12 @@
+"0",""
+"0","url = ""ftp://ftp.nasdaqtrader.com/symboldirectory/nasdaqlisted.txt"""
+"0","h = new_handle()"
+"0","con = curl(url, ""r"", h)"
+"0","tbl = read.table(con, stringsAsFactors=TRUE, fill=TRUE, sep = ""|"", header = TRUE)"
+"2","Warning in scan(file = file, what = what, sep = sep, quote = quote, dec = dec,  :"
+"2","
+ "
+"2"," EOF within quoted string
+"
+"0","close(con)"
+"0","tbl"
