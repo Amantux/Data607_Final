@@ -1,0 +1,3 @@
+"0","target <- as.data.frame(x)"
+"0","target$sentence = paste(target$pre, target$post)"
+"0","target"

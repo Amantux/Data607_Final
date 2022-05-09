@@ -1,6 +1,0 @@
-"0","posts_test$text <- str_replace_all(posts_test$text, fixed(setNames(master$Symbol, master$Name))"
-"0","corp <- corpus(posts_test, docid_field = ""title"", text_field = ""text"")"
-"2","Error: unexpected symbol in:
-""posts_test$text <- str_replace_all(posts_test$text, fixed(setNames(master$Symbol, master$Name))
-corp""
-"
