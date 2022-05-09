@@ -3,9 +3,9 @@
     "path": "~/GitHub/Data607_Final/data607_final_test.Rmd",
     "project_path": "data607_final_test.Rmd",
     "type": "r_markdown",
-    "hash": "1039331199",
+    "hash": "0",
     "contents": "",
-    "dirty": false,
+    "dirty": true,
     "created": 1651973284129.0,
     "source_on_save": false,
     "relative_order": 1,
@@ -13,8 +13,8 @@
         "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "83,72",
-        "scrollLine": "76",
+        "cursorPosition": "89,3",
+        "scrollLine": "85",
         "last_setup_crc32": "8C1D9885bb338d19"
     },
     "folds": "",
@@ -22,7 +22,7 @@
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1652058214412,
+    "last_content_update": 1652058872039,
     "read_only": false,
     "read_only_alternatives": []
 }
