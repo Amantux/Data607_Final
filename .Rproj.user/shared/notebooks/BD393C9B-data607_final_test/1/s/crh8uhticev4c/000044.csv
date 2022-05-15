@@ -1,4 +1,0 @@
-"0","target_augment <- merge(target,add_In_Date,by=""index"")"
-"0","target_sent <- get_sentences(target$sentence)"
-"0","out <- with(target_augment, sentiment_by( get_sentences(target_augment), c(""timestamp"",""pattern"")))"
-"0","plot(out)"

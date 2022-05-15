@@ -1,0 +1,5 @@
+"0","  target_augment <- merge(target,add_In_Date,by=""index"")"
+"0","  target_sent <- get_sentences(target$sentence)"
+"2","Error in get_sentences(target$sentence) : 
+  could not find function ""get_sentences""
+"

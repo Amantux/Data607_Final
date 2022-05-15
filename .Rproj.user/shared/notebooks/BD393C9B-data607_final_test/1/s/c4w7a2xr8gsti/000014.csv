@@ -1,0 +1,5 @@
+"0","sample_data$Test <- ""LLamas"""
+"0","sent <- sentiment_by( get_sentences(sample_data$sentence))"
+"0","sample_data$sentiment <- sentiment(sample_data$sentence)$sentiment "
+"0",""
+"0","sample_data"

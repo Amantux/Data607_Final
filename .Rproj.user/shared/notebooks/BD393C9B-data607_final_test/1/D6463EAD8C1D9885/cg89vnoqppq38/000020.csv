@@ -1,0 +1,33 @@
+"0",""
+"0","ref <-(lookup_table %>% "
+"0","  # transform to date format with lubridate"
+"0","  mutate(lookup_table$date_utc <- as.Date(lookup_table$date_utc)) %>% "
+"0","  # find min and max"
+"0","  summarise(symbol = unique(lookup_table$keyword),"
+"0","            min = min(lookup_table$date_utc),"
+"0","            max = max(lookup_table$date_utc)))"
+"0",""
+"0","l.out <- BatchGetSymbols(tickers = ref$symbol,"
+"0","                         first.date = min(ref$min),"
+"0","                        last.date = max(ref$max), do.cache=FALSE)"
+"2","Warning:"
+"2"," `BatchGetSymbols()` was deprecated in BatchGetSymbols 2.6.4.
+Please use `yfR::yf_get()` instead.
+2022-05-01: Package BatchGetSymbols will soon be replaced by yfR. 
+More details about the change is available at github <<www.github.com/msperlin/yfR>
+You can install yfR by executing:
+
+remotes::install_github('msperlin/yfR')
+"
+"2","
+Running BatchGetSymbols for:"
+"2","
+   tickers =ABNB"
+"2","
+   Downloading data for benchmark ticker"
+"2","
+^GSPC | yahoo (1|1)"
+"2","
+ABNB | yahoo (1|1)"
+"2"," - Got 100% of valid prices | Feels good!"
+"0","l.out$df.tickers"

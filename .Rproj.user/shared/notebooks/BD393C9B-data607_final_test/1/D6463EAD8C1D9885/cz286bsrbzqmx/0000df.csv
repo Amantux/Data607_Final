@@ -1,0 +1,43 @@
+"0","p <- ggplot(sample_data) + aes(x=date_utc, y=sentiment) + geom_violin() +   "
+"0","              stat_summary(fun = ""mean"","
+"0","               geom = ""crossbar"", "
+"0","               width = 0.5,"
+"0","               colour = ""red"") +"
+"0","              stat_summary(fun = ""median"","
+"0","               geom = ""point"","
+"0","               color = ""Orange"") +"
+"0","              stat_summary(fun.data = ""mean_sdl"", multi=1, geom = ""crossbar"", width=0.2) +"
+"0","              stat_summary(fun.data=mean_sdl, mult=1, "
+"0","                 geom=""pointrange"", color=""red"") +"
+"0","              geom_jitter(shape=16, position=position_jitter(0.2))"
+"2","Warning:"
+"2"," Ignoring unknown parameters: multi
+"
+"2","Warning:"
+"2"," Ignoring unknown parameters: mult
+"
+"0","t <- ggplot(sample_data) + aes(x=date_utc, y=sentiment) + geom_boxplot() + stat_summary(fun = ""median"","
+"0","               geom = ""point"","
+"0","               color = ""Orange"") +               "
+"0","              stat_summary(fun = ""mean"","
+"0","               geom = ""point"", "
+"0","               colour = ""red"")"
+"0","t2 <- ggplot(l.out$df.tickers) + aes(x=ref.date, y=c(""price.high"",""price.low"")) + geom_boxplot() + stat_summary(fun = ""median"","
+"0","               geom = ""point"","
+"0","               color = ""Orange"") +               "
+"0","              stat_summary(fun = ""mean"","
+"0","               geom = ""point"", "
+"0","               colour = ""red"")"
+"0","t2"
+"1","[1m[33mError[39m in [38;5;232m[38;5;235m[48;5;253m`check_aesthetics()`[49m[38;5;232m[39m:[22m
+[33m![39m Aesthetics must be either length 1 or the same as the data (1): y
+Backtrace:
+[90m 1. [39m[1mbase[22m `<fn>`(x)
+[90m 2. [39mggplot2:::print.ggplot(x)
+[90m 4. [39mggplot2:::ggplot_build.ggplot(x)
+[90m 5. [39mggplot2 by_layer(function(l, d) l$compute_aesthetics(d, plot))
+[90m 6. [39mggplot2 f(l = layers[[i]], d = data[[i]])
+[90m 7. [39ml$compute_aesthetics(d, plot)
+[90m 8. [39mggplot2 f(..., self = self)
+[90m 9. [39mggplot2:::check_aesthetics(evaled, n)
+"

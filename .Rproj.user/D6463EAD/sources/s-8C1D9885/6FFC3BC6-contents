@@ -29,6 +29,7 @@ library(dplyr)
 library(tm)
 
 library(SnowballC)
+library(BatchGetSymbols)
 ```
 ```{r}
 
@@ -46,7 +47,9 @@ master[master$Symbol == "MGD"]
 
 ```{r}
 posts <- find_thread_urls(subreddit="wallstreetbets", sort_by="new", period="hour")
+
 ```
+
 
 ```{r}
 posts_test <- head(posts, n=5000L)
@@ -70,7 +73,7 @@ as.data.frame(x)
 library(sentimentr)
 ```
 ```{r}
-add_In_Date <- posts_test[c("index","timestamp")]
+add_In_Date <- posts_test[c("index","date_utc")]
 rownames(add_In_Date) <- NULL
 add_In_Date
 ```
@@ -81,10 +84,137 @@ target$sentence = paste(target$pre, target$post)
 target
 target_augment <- merge(target,add_In_Date,by="index")
 target_sent <- get_sentences(target$sentence)
-out <- with(target_augment, sentiment_by( get_sentences(target_augment), c("timestamp","pattern")))
+out <- with(target_augment, sentiment_by( get_sentences(target_augment), c("date_utc","pattern")))
 plot(out)
 
 #target_sent <- sentiment_by(target_sent)
 #target$sentiment = target_sent$ave_sentiment
 #target
 ```
+
+
+```{r}
+ master <- TTR::stockSymbols(exchange = c("AMEX", "NASDAQ", "NYSE", "ARCA", "BATS", "IEX"))[,c('Name', 'Symbol')]
+  posts <- find_thread_urls(subreddit="wallstreetbets", sort_by="new", period="hour")
+  posts_test <- head(posts, n=500L)
+  posts_test$index <- 1:nrow(posts_test)
+  corp <- corpus(posts_test, docid_field = "index", text_field = "text")
+  x <- kwic(tokens(corp, remove_punct = TRUE, remove_numbers = TRUE), 
+            pattern = master$Symbol,
+            window = 8, case_insensitive = FALSE,
+  )
+  x$index = x$docname
+  add_In_Date <- posts_test[c("index","date_utc")]
+  rownames(add_In_Date) <- NULL
+  target <- as.data.frame(x)
+  target$sentence = paste(target$pre, target$post)
+  target
+  target_augment <- merge(target,add_In_Date,by="index")
+  target_sent <- get_sentences(target$sentence)
+  out <- with(target_augment, sentiment_by( get_sentences(target_augment), c("date_utc","pattern")))
+  plot(out)
+  
+```
+```{r}
+unique(target$keyword)
+target_augment[target_augment$keyword == "ABNB",]
+ out <- with(target_augment[target_augment$keyword == "ABNB",], sentiment_by( get_sentences(target_augment[target_augment$keyword == "ABNB",]), c("date_utc","pattern")))
+ out
+  plot(out)
+```
+```{r}
+
+first.date <- Sys.Date()-1
+last.date <- Sys.Date()
+
+l.out <- BatchGetSymbols(tickers = "ABNB",
+                         first.date = first.date,
+                        last.date = last.date, do.cache=FALSE)
+out_test_3 <- l.out$df.tickers$price.high
+
+```
+
+
+```{r}
+library(ggplot2)
+library(plotly)
+library(reshape2)
+```
+
+```{r}
+sample_data <- target_augment[target_augment$keyword == "ABNB",]
+sample_data 
+```
+```{r}
+sample_data$Test <- "LLamas"
+sent <- sentiment_by( get_sentences(sample_data$sentence))
+sample_data$sentiment <- sentiment(sample_data$sentence)$sentiment 
+
+sample_data
+#sample_data <- merge(target,add_In_Date,by="index")
+
+```
+```{r}
+library(lubridate)
+library(dplyr)
+```
+
+
+```{r}
+lookup_table <- unique(sample_data[c("keyword", "date_utc")])
+
+
+
+lookup_table$date_utc <- as.Date(lookup_table$date_utc)
+range(lookup_table$date_utc)
+```
+```{r}
+
+ref <-(lookup_table %>% 
+  # transform to date format with lubridate
+  mutate(lookup_table$date_utc <- as.Date(lookup_table$date_utc)) %>% 
+  # find min and max
+  summarise(symbol = unique(lookup_table$keyword),
+            min = min(lookup_table$date_utc),
+            max = max(lookup_table$date_utc)))
+
+l.out <- BatchGetSymbols(tickers = ref$symbol,
+                         first.date = min(ref$min),
+                        last.date = max(ref$max), do.cache=FALSE)
+l.out$df.tickers 
+```
+
+
+
+```{r}
+p <- ggplot(sample_data) + aes(x=date_utc, y=sentiment) + geom_violin() +   
+              stat_summary(fun = "mean",
+               geom = "crossbar", 
+               width = 0.5,
+               colour = "red") +
+              stat_summary(fun = "median",
+               geom = "point",
+               color = "Orange") +
+              stat_summary(fun.data = "mean_sdl", multi=1, geom = "crossbar", width=0.2) +
+              stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="red") +
+              geom_jitter(shape=16, position=position_jitter(0.2))
+t <- ggplot(sample_data) + aes(x=date_utc, y=sentiment) + geom_boxplot() + stat_summary(fun = "median",
+               geom = "point",
+               color = "Orange") +               
+              stat_summary(fun = "mean",
+               geom = "point", 
+               colour = "red")
+t2 <- ggplot(l.out$df.tickers) + aes(x=ref.date, y=c("price.high","price.low")) + geom_boxplot() + stat_summary(fun = "median",
+               geom = "point",
+               color = "Orange") +               
+              stat_summary(fun = "mean",
+               geom = "point", 
+               colour = "red")
+t2
+plot1 <- ggplotly(t)
+fig <- subplot(plot1, plot1, nrows = 2, shareX = TRUE) %>%  layout(hovermode = "x unified")
+fig
+
+```
+

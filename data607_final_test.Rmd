@@ -29,6 +29,7 @@ library(dplyr)
 library(tm)
 
 library(SnowballC)
+library(BatchGetSymbols)
 ```
 ```{r}
 
@@ -46,10 +47,12 @@ master[master$Symbol == "MGD"]
 
 ```{r}
 posts <- find_thread_urls(subreddit="wallstreetbets", sort_by="new", period="hour")
+
 ```
 
+
 ```{r}
-posts_test <- head(posts, n=50L)
+posts_test <- head(posts, n=5000L)
 posts_test$index <- 1:nrow(posts_test)
 posts_test
 
@@ -70,7 +73,7 @@ as.data.frame(x)
 library(sentimentr)
 ```
 ```{r}
-add_In_Date <- posts_test[c("index","timestamp")]
+add_In_Date <- posts_test[c("index","date_utc")]
 rownames(add_In_Date) <- NULL
 add_In_Date
 ```
@@ -81,7 +84,7 @@ target$sentence = paste(target$pre, target$post)
 target
 target_augment <- merge(target,add_In_Date,by="index")
 target_sent <- get_sentences(target$sentence)
-out <- with(target_augment, sentiment_by( get_sentences(target_augment), c("timestamp","pattern")))
+out <- with(target_augment, sentiment_by( get_sentences(target_augment), c("date_utc","pattern")))
 plot(out)
 
 #target_sent <- sentiment_by(target_sent)
@@ -90,22 +93,96 @@ plot(out)
 ```
 
 
-## R Markdown
+```{r}
+ master <- TTR::stockSymbols(exchange = c("AMEX", "NASDAQ", "NYSE", "ARCA", "BATS", "IEX"))[,c('Name', 'Symbol')]
+  posts <- find_thread_urls(subreddit="wallstreetbets", sort_by="new", period="hour")
+  posts_test <- head(posts, n=500L)
+  posts_test$index <- 1:nrow(posts_test)
+  corp <- corpus(posts_test, docid_field = "index", text_field = "text")
+  x <- kwic(tokens(corp, remove_punct = TRUE, remove_numbers = TRUE), 
+            pattern = master$Symbol,
+            window = 8, case_insensitive = FALSE,
+  )
+  x$index = x$docname
+  add_In_Date <- posts_test[c("index","date_utc")]
+  rownames(add_In_Date) <- NULL
+  target <- as.data.frame(x)
+  target$sentence = paste(target$pre, target$post)
+  target
+  target_augment <- merge(target,add_In_Date,by="index")
+  target_sent <- get_sentences(target$sentence)
+  out <- with(target_augment, sentiment_by( get_sentences(target_augment), c("date_utc","pattern")))
+  plot(out)
+  
+```
+```{r}
+unique(target$keyword)
+target_augment[target_augment$keyword == "ABNB",]
+ out <- with(target_augment[target_augment$keyword == "ABNB",], sentiment_by( get_sentences(target_augment[target_augment$keyword == "ABNB",]), c("date_utc","pattern")))
+ out
+  plot(out)
+```
+```{r}
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+first.date <- Sys.Date()-1
+last.date <- Sys.Date()
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+l.out <- BatchGetSymbols(tickers = "ABNB",
+                         first.date = first.date,
+                        last.date = last.date, do.cache=FALSE)
 
-```{r cars}
-summary(cars)
+print(l.out$df.control)
+print(l.out$df.tickers)
+out_test_3 <- l.out$df.tickers$price.high
+
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+library(ggplot2)
+library(plotly)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+sample_data <- target_augment[target_augment$keyword == "ABNB",]
+sample_data 
+```
+```{r}
+sample_data$Test <- "LLamas"
+sent <- sentiment_by( get_sentences(sample_data$sentence))
+sample_data$sentiment <- sentiment(sample_data$sentence)$sentiment 
+
+sample_data
+#sample_data <- merge(target,add_In_Date,by="index")
+
+```
+
+
+```{r}
+p <- ggplot(sample_data) + aes(x=date_utc, y=sentiment) + geom_violin() +   
+              stat_summary(fun = "mean",
+               geom = "crossbar", 
+               width = 0.5,
+               colour = "red") +
+              stat_summary(fun = "median",
+               geom = "point",
+               color = "Orange") +
+              stat_summary(fun.data = "mean_sdl", multi=1, geom = "crossbar", width=0.2) +
+              stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="red") +
+              geom_jitter(shape=16, position=position_jitter(0.2))
+t <- ggplot(sample_data) + aes(x=date_utc, y=sentiment) + geom_boxplot() + stat_summary(fun = "median",
+               geom = "point",
+               color = "Orange") +               
+              stat_summary(fun = "mean",
+               geom = "point", 
+               colour = "red")
+plot1 <- ggplotly(t)
+fig <- subplot(plot1, plot1, nrows = 2, shareX = TRUE) %>%  layout(xaxis = list(showspikes = TRUE, spikemode  = "toaxis+across+marker",
+spikesnap = "cursor",
+showline=TRUE,
+showgrid=TRUE,
+spikemode  = "across+toaxis") )
+fig
+
+```
+

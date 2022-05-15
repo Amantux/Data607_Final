@@ -1,4 +1,0 @@
-"0",""
-"0","#target_sent <- sentiment_by(target_sent)"
-"0","#target$sentiment = target_sent$ave_sentiment"
-"0","#target"

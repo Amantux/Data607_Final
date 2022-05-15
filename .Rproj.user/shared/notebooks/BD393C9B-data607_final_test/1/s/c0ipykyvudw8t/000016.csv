@@ -1,3 +1,0 @@
-"0","posts_test <- head(posts, n=50L)"
-"0","posts_test$index <- 1:nrow(posts_test)"
-"0","posts_test"

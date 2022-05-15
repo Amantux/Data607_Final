@@ -1,0 +1,2 @@
+"0"," out <- with(target_augment[target_augment$keyword == ""ABNB"",], sentiment_by( get_sentences(target_augment[target_augment$keyword == ""ABNB"",]), c(""date_utc"",""pattern"")))"
+"0"," out"

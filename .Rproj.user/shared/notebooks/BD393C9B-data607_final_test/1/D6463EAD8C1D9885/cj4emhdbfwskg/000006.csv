@@ -1,0 +1,8 @@
+"0","lookup_table <- unique(sample_data[c(""keyword"", ""date_utc"")])"
+"0","lookup_table$date_utc <- as.Date(lookup_table$date_utc)"
+"0","range(lookup_table$date_utc)"
+"1","[1]"
+"1"," ""2022-05-03"""
+"1"," ""2022-05-11"""
+"1","
+"
