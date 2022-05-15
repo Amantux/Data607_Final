@@ -1,0 +1,7 @@
+"0","my_autocomplete_list <- TTR::stockSymbols(exchange = c(""AMEX"", ""NASDAQ"", ""NYSE"", ""ARCA"", ""BATS"", ""IEX""))[,c('Name', 'Symbol')]"
+"2","Fetching NASDAQ symbols...
+"
+"2","Fetching non-NASDAQ symbols...
+"
+"0","my_autocomplete_list = setNames(my_autocomplete_list, c(""label"", ""value""))"
+"0","my_autocomplete_list"

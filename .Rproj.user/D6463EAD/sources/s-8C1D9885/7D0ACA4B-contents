@@ -1,0 +1,190 @@
+---
+title: An R Markdown document converted from "C:\Users\Aman\Documents\GitHub\Data607_Assignment_1\Data607_Assignment1\R_Selenium.ipynb"
+output: html_document
+---
+
+```{r}
+#This Stack Requires:
+# 1. Docker
+# 2. Jupyter
+# 3. Selenium
+# 4. RSelenium
+
+#Practically, I wanted to set up the basics of a set for a predictor that links the year, the content, and the 3rd party views on youtube.
+#I wanted to practice selinum scraping in R, and this seemed a perfect example as this already has links
+#This project made me realize how much more limited RSelenium is
+
+#This Stack Requires:
+
+# 1. Docker
+
+# 2. Jupyter
+
+# 3. Selenium
+
+# 4. RSelenium
+
+
+
+#Practically, I wanted to set up the basics of a set for a predictor that links the year, the content, and the 3rd party views on youtube.
+
+#I wanted to practice selinum scraping in R, and this seemed a perfect example as this already has links
+
+#In terms of Article, this 
+```
+
+```{r}
+#Start your Selinum Instance Now
+#docker run -d -p 4444:4444 --shm-size="2g" selenium/standalone-chrome:4.1.2-20220131
+```
+
+```{r}
+Fresh_Data <- FALSE #This will refresh data (Not using caching from my git)
+Fresh_Computes <- TRUE  #Uses docker to pull and augment data, requires the Selenium Instance
+Dev_Checks <- FALSE #Various Extra Print statements that make debugging easier
+```
+
+```{r}
+library('RSelenium')
+```
+
+```{r}
+url.data <- "https://raw.githubusercontent.com/fivethirtyeight/superbowl-ads/main/superbowl-ads.csv"
+
+raw <- read.csv(url(url.data), header = TRUE,) 
+```
+
+```{r}
+head(raw)
+```
+
+```{r}
+#This is the raw data from fivethirtyeight
+#Now we're going to augment it
+```
+
+```{r}
+if (Fresh_Computes && Fresh_Data){
+    remDr <- RSelenium::remoteDriver(remoteServerAddr = "localhost",
+                                 port = 4444,
+                                 browserName = "chrome")
+    remDr$open()
+}
+```
+
+```{r}
+if (Fresh_Computes && Fresh_Data && Dev_Checks){
+    remDr$navigate("https://www.youtube.com/watch?v=lNPccrGk77A") #Entering our URL gets the browser to navigate to the page
+    remDr$screenshot(display = TRUE)
+}
+```
+
+```{r}
+if (Fresh_Computes && Fresh_Data && Dev_Checks){    
+    webElem <- remDr$findElement(using = "css selector", "[class='view-count style-scope ytd-video-view-count-renderer']")
+    view_number_text = webElem$getElementText()
+    print(view_number_text[])
+}
+```
+
+```{r}
+if (Fresh_Computes && Fresh_Data && Dev_Checks){
+    webElem <- remDr$findElement(using = "css", "[class='view-count style-scope ytd-video-view-count-renderer']")
+    view_number_text = webElem$getElementText()
+    print(view_number_text)
+    view_number_text = gsub("views", "", view_number_text)
+    view_number_text = gsub(",", "", view_number_text)
+    print(view_number_text)
+}
+```
+
+```{r}
+raw$Views <- "NAN"
+```
+
+```{r}
+if (Dev_Checks) {
+    head(raw)
+}
+```
+
+```{r}
+if (Fresh_Computes && Fresh_Data){
+    length <- nrow(raw)
+    if (Dev_Checks){
+        print("Dev Mode Enabled")
+        length <- 5
+    }
+    for (row_number in 1:length){
+        remDr$navigate(as.character(raw$youtube[row_number]))
+        Sys.sleep(5.0) #Could not find a way to wait for complete page load, so I threw in a wait to ensure load
+        webElem <- tryCatch({remDr$findElement(using = "css", "[class='view-count style-scope ytd-video-view-count-renderer']")},
+                            error = function(e){ print("Could Not Find Video")})
+        view_number_text <- ""
+        if(!is.null(webElem)){
+            view_number_text <- tryCatch({webElem$getElementText()},
+                                error = function(e){ print("Could Not get View Count Value")})
+        } else {
+            print("I could not find target")
+        }
+        view_number_text = gsub("views", "", view_number_text)
+        view_number_text = gsub(",", "", view_number_text)
+        if (Dev_Checks){
+            print(raw[row_number,]['youtube_url'])
+            print(view_number_text)
+        }
+        raw$Views[row_number] <- view_number_text
+    }
+    if (Dev_Checks) {
+        write.csv(raw,"test_data.csv", row.names = FALSE)
+    } else {
+        write.csv(raw,"Superbowl_adds_count.csv", row.names = FALSE)
+    }
+} else {
+    url.data <- "https://raw.githubusercontent.com/Amantux/Data607_Assignment1/main/Superbowl_adds_count.csv"
+    raw <- read.csv(url(url.data), header = TRUE,) 
+}
+```
+
+```{r}
+head(raw)
+nrow(raw)
+```
+
+```{r}
+raw<-raw[!((raw$Views=="Could Not get View Count Value")|(raw$Views=="Could Not Find Video")),] #remove the empty rows
+head(raw)
+```
+
+```{r}
+c_dat = subset(raw, select = -c(superbowl_ads_dot_com_url,youtube_url) )
+```
+
+```{r}
+head(c_dat)
+```
+
+```{r}
+unique(c_dat['brand'])
+```
+
+```{r}
+#Findings and Recommendations
+#Practically I wanted to develop the data backing a predictor, and I think I could probably do a better job of augmenting
+# This mainly relies on scraping youtube data, where not all cases actually even have a presence. It may be better
+# to look at the viewership numbers from the superbowl itself. 
+# In terms of the origin data set, I would love to see a breakdown on time or % of ad as I think that would be interesting!
+```
+
+```{r}
+install.packages("rmarkdown")
+```
+
+```{r}
+library('rmarkdown')
+```
+
+```{r}
+convert_ipynb("R_Selenium', output = xfun::with_ext(input, "Rmd"))
+```
+

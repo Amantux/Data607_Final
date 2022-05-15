@@ -164,6 +164,11 @@ plot3 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.close, colour = 
 fig <- subplot(plot1, plot2, plot3, nrows = 3, shareX = TRUE) %>%  layout(hovermode = "x unified")
 fig
 ```
+```{r}
+my_autocomplete_list <- TTR::stockSymbols(exchange = c("AMEX", "NASDAQ", "NYSE", "ARCA", "BATS", "IEX"))[,c('Name', 'Symbol')]
+my_autocomplete_list = setNames(my_autocomplete_list, c("label", "value"))
+my_autocomplete_list
+```
 
 
 t2 <- ggplot(l.out$df.tickers) + aes(x=ref.date, y=c("price.high","price.low")) + geom_boxplot() + stat_summary(fun = "median",

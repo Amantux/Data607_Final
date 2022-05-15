@@ -1,0 +1,4 @@
+[1,"=> shiny::runApp()\n\n"]
+[2,"Loading required package: shiny\r\nError in parse(file, keep.source = FALSE, srcfile = src, encoding = enc) : \r\n  C:\\Users\\Aman\\Documents\\GitHub\\Data607_Final\\DataSentimentMaker/app.R:35:45: unexpected '='\r\n34:       label = 'Select Company or Enter Symbol',\r\n35:       choices = c(my_autocomplete_list$Name =\r\n                                                ^\r\n"]
+[2,"Possible extra comma at:\r\n44:      label = \"Enter Search Term: \",\r\n                                      ^\r\nPossible extra comma at:\r\n63:    ),\r\n        ^\r\nError in sourceUTF8(fullpath, envir = new.env(parent = sharedEnv)) : \r\n  Error sourcing C:\\Users\\Aman\\AppData\\Local\\Temp\\RtmpG8MoWZ\\file49b03ca53332\r\nCalls: <Anonymous> ... shinyAppDir -> shinyAppDir_appR -> appObj -> func -> sourceUTF8\r\nExecution halted\r\n"]
+[1,"\nShiny application failed (exit status 1).\n\n"]
