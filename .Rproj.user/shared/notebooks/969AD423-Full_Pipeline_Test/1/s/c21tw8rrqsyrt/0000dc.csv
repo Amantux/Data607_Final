@@ -1,0 +1,4 @@
+"0","mergedData <- merge(priceData, sentimentHolder, all.x = TRUE)"
+"0","mergedData$`mean(sentiment)`[is.na(mergedData$`mean(sentiment)`)] <- 0"
+"0","mergedData$sentiment <- mergedData$`mean(sentiment)`"
+"0","summary(comparedf(mergedData, priceData, by = ""ticker""))"

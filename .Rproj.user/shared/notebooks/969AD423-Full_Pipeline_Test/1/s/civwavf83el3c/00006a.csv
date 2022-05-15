@@ -1,0 +1,13 @@
+"0","#get_sentences(Bravo_Lima$sentence)"
+"0","target$sentiment <- sentiment(target$sentence)$sentiment"
+"0",""
+"0",""
+"0","sentimentHolder <- target[c(""keyword"",""date_utc"", ""sentiment"")]"
+"0","sentimentHolder = setNames(sentimentHolder, c(""ticker"", ""ref.date"",""sentiment""))"
+"0",""
+"0","sentimentHolder <- sentimentHolder %>% group_by(ticker, ref.date) %>% summarise(mean(sentiment))"
+"1","[38;5;232m`summarise()` has grouped output by 'ticker'. You can override using the `.groups` argument.[39m
+"
+"0","sentimentHolderback <- sentimentHolder"
+"0","sentimentHolder$ref.date = as.Date(sentimentHolder$ref.date)"
+"0","sentimentHolder"

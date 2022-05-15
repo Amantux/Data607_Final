@@ -2,7 +2,11 @@
 title: "R_test"
 author: "AZM"
 date: "5/7/2022"
-output: html_document
+output: 
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -14,7 +18,8 @@ knitr::opts_chunk$set(echo = TRUE)
 First things first, let's grab 
   1. RedditExtractoR for scraping reddit posts 
   2. ttr for quant trading info & ticker lists
-  3. 
+  3. BatchGetSymbols for symbol look up
+  4. Various Plotting tools
 
 ```{r}
 library(RedditExtractoR)
@@ -32,7 +37,6 @@ library(SnowballC)
 library(BatchGetSymbols)
 
 library(lubridate)
-library(dplyr)
 
 library(arsenal)
 
@@ -40,17 +44,37 @@ library(ggplot2)
 library(plotly)
 library(reshape2)
 
+
+
+library(sentimentr)
+
+
+
+
 ```
 
 
 
+<H1> Getting Started </H1>
 
+First things first we're going to get a codex of all ticker symbols listed on all exchanges. 
+
+Then we are going to get all subthreads on WSB indexed by reddit, sorted by new and set for an hour duration!
+
+Because I don't know how much power your computer has, I'm going to limit it to 500 total posts!
 
 ```{r}
  master <- TTR::stockSymbols(exchange = c("AMEX", "NASDAQ", "NYSE", "ARCA", "BATS", "IEX"))[,c('Name', 'Symbol')]
   all_posts <- find_thread_urls(subreddit="wallstreetbets", sort_by="new", period="hour")
   slim_posts <- head(all_posts, n=500L)
 ```
+<H1> Creating a corpus </H1>
+
+At this point we have our 500 indexed posts, and we're going to create a corpus out of all of them!
+
+From there, we're going to strip numbers and punctuation, and create a window around each of the ticker symbols found in the text. 
+
+
 ```{r}
  slim_posts$index <- 1:nrow(slim_posts)
   corp <- corpus(slim_posts, docid_field = "index", text_field = "text")
@@ -67,22 +91,26 @@ library(reshape2)
   target
 ```
 
+<H2> Funkyness correction </H2> 
+
+Because there was some issues with stripping punctuation causing issues in getting sentiment for sentences I threw it through a a punctuation stripper. 
 
 ```{r}
 
-Bravo_Lima <- head(target, n=50L) 
-Bravo_Lima$sentence <- str_replace_all(Bravo_Lima$sentence, pattern = '[:punct:]',  replacement =" ")
+target$sentence <- str_replace_all(target$sentence, pattern = '[:punct:]',  replacement =" ")
 
-Bravo_Lima
 ```
+<H1> Sentiment Break ups </H1>
+
+At this point we have relatively sanitized data and we will proceed to take the data, run both sides of the window through a sentiment determining routine, and then create a dataframe that has the sentiment, date, and ticker symbol.
 
 
 ```{r}
-get_sentences(Bravo_Lima$sentence)
-Bravo_Lima$sentiment <- sentiment(Bravo_Lima$sentence)$sentiment
+#get_sentences(Bravo_Lima$sentence)
+target$sentiment <- sentiment(target$sentence)$sentiment
 
 
-sentimentHolder <- Bravo_Lima[c("keyword","date_utc", "sentiment")]
+sentimentHolder <- target[c("keyword","date_utc", "sentiment")]
 sentimentHolder = setNames(sentimentHolder, c("ticker", "ref.date","sentiment"))
 
 sentimentHolder <- sentimentHolder %>% group_by(ticker, ref.date) %>% summarise(mean(sentiment))
@@ -93,38 +121,36 @@ sentimentHolder
 ```
 
 
-ref <-(sentimentHolderback %>% 
-  # transform to date format with lubridate
-  mutate(sentimentHolder$ref.date <- as.Date(sentimentHolder$ref.date)) %>% 
-  # find min and max
-  summarise(ticker = unique(sentimentHolder$ticker),
-            min = min(sentimentHolder$ref.date),
-            max = max(sentimentHolder$ref.date)))
 
-l.out <- BatchGetSymbols(tickers = ref$ticker,
-                         first.date = min(ref$min),
-                        last.date = max(ref$max), do.cache=FALSE)
-priceData <- l.out$df.tickers 
+<H1> Getting Price </H1>
 
 
+<H2> Getting the price index </H2> 
+
+At this point we will get the price metrics of all ticker symbols enclosed in the data for a range of the sentiment data minus one day to plus two days!
 
 ```{r}
 max(sentimentHolder$ref.date)+2
-min(sentimentHolder$ref.date)
+min(sentimentHolder$ref.date)-1
 l.out <- BatchGetSymbols(tickers = unique(sentimentHolder$ticker),
                          first.date = as.Date(min(sentimentHolder$ref.date)),
                         last.date = min(as.Date(max(sentimentHolder$ref.date)+2,Sys.Date())), do.cache=FALSE)
 l.out
 priceData <- l.out$df.tickers 
 ```
+<H2> Looking in </H2>
+
+Here we have the sentiment data and the price data as raw dataframes we can poke and prod!
+
 ```{r}
 priceData
 sentimentHolder
 ```
-```{r}
+<H2> The Merge </H2>
 
-```
+At this point we're going to merge the sentiment with the pricing data. 
 
+We will also create a summary to ensure we didn't create any data integrity issues!
 
 ```{r}
 mergedData <- merge(priceData, sentimentHolder, all.x = TRUE)
@@ -133,15 +159,15 @@ mergedData$sentiment <- mergedData$`mean(sentiment)`
 summary(comparedf(mergedData, priceData, by = "ticker"))
 mergedData
 ```
+<H1> Plotting </H1> 
 
+Whats life like without some fun plots!
+
+First things first, lets make a basic chart and then create a subplot of it and itself just to ensure I can figure out how to make subplots!
 
 
 ```{r}
 dateSentiment <- mergedData[c("ref.date","ticker", "sentiment")]
-#t(dateSentiment)
-#dateSentimentLong <- melt(t(dateSentiment, id = "ticker")
-#dateSentimentLong
-
 t <- ggplot(dateSentiment[dateSentiment$sentiment != 0,]) + aes(x=ref.date, y=sentiment, color = ticker) + geom_boxplot() + stat_summary(fun = "median",
                geom = "point",
                color = "Orange") +               
@@ -154,26 +180,47 @@ fig <- subplot(plot1, plot1, nrows = 2, shareX = TRUE) %>%  layout(hovermode = "
 fig
 
 ```
+<H1> The Final chart </H1>
+
+At this point, we have a lot of pricing data, along with ticker symbol and sentiment, so let's combine a subset onto one workspace!
+
+We can easily use price high and low for one chart, along with the asociated sentiment!
+
+
+We can also make this shiny deployable with a higher degree of flexibility in terms of job post count!
+
+
 ```{r}
 datePrice <- mergedData[c("ref.date","ticker", "price.open", "price.close")]
-datePrice
 plot2 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.open, colour = ticker)) +
-  geom_line())
-plot3 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.close, colour = ticker)) +
-  geom_line())
+  geom_line(show.legend=FALSE)) %>% layout(title = 'Sentiment') 
+plot3 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.close, colour = ticker), show.legend = FALSE) +
+  geom_line(show.legend = FALSE))%>% layout(title = 'Sentiment2') 
+
 fig <- subplot(plot1, plot2, plot3, nrows = 3, shareX = TRUE) %>%  layout(hovermode = "x unified")
 fig
 ```
-```{r}
-my_autocomplete_list <- TTR::stockSymbols(exchange = c("AMEX", "NASDAQ", "NYSE", "ARCA", "BATS", "IEX"))[,c('Name', 'Symbol')]
-my_autocomplete_list = setNames(my_autocomplete_list, c("label", "value"))
-my_autocomplete_list
-```
 
 
-t2 <- ggplot(l.out$df.tickers) + aes(x=ref.date, y=c("price.high","price.low")) + geom_boxplot() + stat_summary(fun = "median",
-               geom = "point",
-               color = "Orange") +               
-              stat_summary(fun = "mean",
-               geom = "point", 
-               colour = "red")
+<H1> References </H1>
+
+
+
+First things first, there are a billion pages of R documentation that made this totally possible:
+
+https://shiny.rstudio.com/tutorial/
+https://shiny.rstudio.com/reference/shiny/1.0.4/downloadButton.html
+https://cran.r-project.org/web/packages/quanteda/quanteda.pdf
+https://cran.r-project.org/web/packages/SnowballC/index.html
+https://cran.r-project.org/web/packages/BatchGetSymbols/index.html
+https://cran.r-project.org/web/packages/sentimentr/sentimentr.pdf
+https://cran.r-project.org/web/packages/arsenal/index.html
+https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf
+https://cran.r-project.org/web/packages/lubridate/index.html
+
+
+Not to mention Yahoo for the financial data
+
+
+Please also check out the shiny app included in this!
+

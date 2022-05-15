@@ -1,6 +1,0 @@
-"0","plot2 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.open, colour = ticker)) +"
-"0","  geom_line())"
-"0","plot3 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.close, colour = ticker)) +"
-"0","  geom_line())"
-"0","fig <- subplot(plot1, plot2, plot3, nrows = 3, shareX = TRUE) %>%  layout(hovermode = ""x unified"")"
-"0","fig"

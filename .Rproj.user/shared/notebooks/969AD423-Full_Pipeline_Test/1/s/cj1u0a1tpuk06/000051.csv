@@ -1,0 +1,8 @@
+"0","datePrice <- mergedData[c(""ref.date"",""ticker"", ""price.open"", ""price.close"")]"
+"0","plot2 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.open, colour = ticker)) +"
+"0","  geom_line(show.legend=FALSE)) %>% layout(title = 'Sentiment') "
+"0","plot3 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.close, colour = ticker), show.legend = FALSE) +"
+"0","  geom_line(show.legend = FALSE))%>% layout(title = 'Sentiment2') "
+"0",""
+"0","fig <- subplot(plot1, plot2, plot3, nrows = 3, shareX = TRUE) %>%  layout(hovermode = ""x unified"")"
+"0","fig"
