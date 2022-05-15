@@ -1,0 +1,5 @@
+"0",""
+"0","Bravo_Lima <- head(target, n=50L) "
+"0","Bravo_Lima$sentence <- str_replace_all(Bravo_Lima$sentence, pattern = '[:punct:]',  replacement ="" "")"
+"0",""
+"0","Bravo_Lima"

@@ -1,0 +1,174 @@
+---
+title: "R_test"
+author: "AZM"
+date: "5/7/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<H1> Library Load in </H1>
+
+First things first, let's grab 
+  1. RedditExtractoR for scraping reddit posts 
+  2. ttr for quant trading info & ticker lists
+  3. 
+
+```{r}
+library(RedditExtractoR)
+library(TTR)
+library(curl)
+library(tidyverse)
+library(quanteda)
+library(readr)
+
+library(dplyr)
+
+library(tm)
+
+library(SnowballC)
+library(BatchGetSymbols)
+
+library(lubridate)
+library(dplyr)
+
+library(arsenal)
+
+library(ggplot2)
+library(plotly)
+library(reshape2)
+
+```
+
+
+
+
+
+```{r}
+ master <- TTR::stockSymbols(exchange = c("AMEX", "NASDAQ", "NYSE", "ARCA", "BATS", "IEX"))[,c('Name', 'Symbol')]
+  all_posts <- find_thread_urls(subreddit="wallstreetbets", sort_by="new", period="hour")
+  slim_posts <- head(all_posts, n=500L)
+```
+```{r}
+ slim_posts$index <- 1:nrow(slim_posts)
+  corp <- corpus(slim_posts, docid_field = "index", text_field = "text")
+  x <- kwic(tokens(corp, remove_punct = TRUE, remove_numbers = TRUE), 
+            pattern = master$Symbol,
+            window = 8, case_insensitive = FALSE,
+  )
+  x$index = x$docname
+  add_In_Date <- slim_posts[c("index","date_utc")]
+  rownames(add_In_Date) <- NULL
+  target <- as.data.frame(x)
+  target$sentence = paste(target$pre, target$post)
+  target <- merge(target,add_In_Date,by="index")
+  target
+```
+
+
+```{r}
+
+Bravo_Lima <- head(target, n=50L) 
+Bravo_Lima$sentence <- str_replace_all(Bravo_Lima$sentence, pattern = '[:punct:]',  replacement =" ")
+
+Bravo_Lima
+```
+
+
+```{r}
+get_sentences(Bravo_Lima$sentence)
+Bravo_Lima$sentiment <- sentiment(Bravo_Lima$sentence)$sentiment
+
+
+sentimentHolder <- Bravo_Lima[c("keyword","date_utc", "sentiment")]
+sentimentHolder = setNames(sentimentHolder, c("ticker", "ref.date","sentiment"))
+
+sentimentHolder <- sentimentHolder %>% group_by(ticker, ref.date) %>% summarise(mean(sentiment))
+
+sentimentHolderback <- sentimentHolder
+sentimentHolder$ref.date = as.Date(sentimentHolder$ref.date)
+sentimentHolder
+```
+
+
+ref <-(sentimentHolderback %>% 
+  # transform to date format with lubridate
+  mutate(sentimentHolder$ref.date <- as.Date(sentimentHolder$ref.date)) %>% 
+  # find min and max
+  summarise(ticker = unique(sentimentHolder$ticker),
+            min = min(sentimentHolder$ref.date),
+            max = max(sentimentHolder$ref.date)))
+
+l.out <- BatchGetSymbols(tickers = ref$ticker,
+                         first.date = min(ref$min),
+                        last.date = max(ref$max), do.cache=FALSE)
+priceData <- l.out$df.tickers 
+
+
+
+```{r}
+max(sentimentHolder$ref.date)+2
+min(sentimentHolder$ref.date)
+l.out <- BatchGetSymbols(tickers = unique(sentimentHolder$ticker),
+                         first.date = as.Date(min(sentimentHolder$ref.date)),
+                        last.date = min(as.Date(max(sentimentHolder$ref.date)+2,Sys.Date())), do.cache=FALSE)
+l.out
+priceData <- l.out$df.tickers 
+```
+```{r}
+priceData
+sentimentHolder
+```
+```{r}
+
+```
+
+
+```{r}
+mergedData <- merge(priceData, sentimentHolder, all.x = TRUE)
+mergedData$`mean(sentiment)`[is.na(mergedData$`mean(sentiment)`)] <- 0
+mergedData$sentiment <- mergedData$`mean(sentiment)`
+summary(comparedf(mergedData, priceData, by = "ticker"))
+mergedData
+```
+
+
+
+```{r}
+dateSentiment <- mergedData[c("ref.date","ticker", "sentiment")]
+#t(dateSentiment)
+#dateSentimentLong <- melt(t(dateSentiment, id = "ticker")
+#dateSentimentLong
+
+t <- ggplot(dateSentiment[dateSentiment$sentiment != 0,]) + aes(x=ref.date, y=sentiment, color = ticker) + geom_boxplot() + stat_summary(fun = "median",
+               geom = "point",
+               color = "Orange") +               
+              stat_summary(fun = "mean",
+               geom = "point", 
+               colour = "red")
+
+plot1 <- ggplotly(t)
+fig <- subplot(plot1, plot1, nrows = 2, shareX = TRUE) %>%  layout(hovermode = "x unified")
+fig
+
+```
+```{r}
+datePrice <- mergedData[c("ref.date","ticker", "price.open", "price.close")]
+datePrice
+plot2 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.open, colour = ticker)) +
+  geom_line())
+plot3 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.close, colour = ticker)) +
+  geom_line())
+fig <- subplot(plot1, plot2, plot3, nrows = 3, shareX = TRUE) %>%  layout(hovermode = "x unified")
+fig
+```
+
+
+t2 <- ggplot(l.out$df.tickers) + aes(x=ref.date, y=c("price.high","price.low")) + geom_boxplot() + stat_summary(fun = "median",
+               geom = "point",
+               color = "Orange") +               
+              stat_summary(fun = "mean",
+               geom = "point", 
+               colour = "red")

@@ -1,0 +1,32 @@
+"0",""
+"0","first.date <- Sys.Date()-5"
+"0","last.date <- Sys.Date()"
+"0",""
+"0","l.out <- BatchGetSymbols(tickers = c(""ABNB"",""GME""),"
+"0","                         first.date = first.date,"
+"0","                        last.date = last.date, do.cache=FALSE)"
+"2","Warning:"
+"2"," `BatchGetSymbols()` was deprecated in BatchGetSymbols 2.6.4.
+Please use `yfR::yf_get()` instead.
+2022-05-01: Package BatchGetSymbols will soon be replaced by yfR. 
+More details about the change is available at github <<www.github.com/msperlin/yfR>
+You can install yfR by executing:
+
+remotes::install_github('msperlin/yfR')
+"
+"2","
+Running BatchGetSymbols for:"
+"2","
+   tickers =ABNB, GME"
+"2","
+   Downloading data for benchmark ticker"
+"2","
+^GSPC | yahoo (1|1)"
+"2","
+ABNB | yahoo (1|2)"
+"2"," - Got 100% of valid prices | Well done!"
+"2","
+GME | yahoo (2|2)"
+"2"," - Got 100% of valid prices | Got it!"
+"0","out_test_3 <- l.out$df.tickers"
+"0","out_test_3"
