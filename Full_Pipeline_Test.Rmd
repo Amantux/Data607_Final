@@ -1,6 +1,6 @@
 ---
-title: "R_test"
-author: "AZM"
+title: "Final Project Data 607"
+author: "Alex, PK, Tora"
 date: "5/7/2022"
 output: 
   html_document:
