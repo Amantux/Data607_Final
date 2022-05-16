@@ -1,7 +1,7 @@
 ---
 title: "Final Project Data 607"
-author: "Alex, PK, Tora"
-date: "5/7/2022"
+author: "Alex Moyse, PK O'Flaherty, Tora Mullings"
+date: "5/15/2022"
 output: 
   html_document:
     df_print: paged
@@ -10,12 +10,108 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
 ```
+<!--
+submit links to our:
+ * final project presentation (10 minutes)
+ * github with code
+ * published rmarkdown
 
-<H1> Library Load in </H1>
+1 "ok to limit scope and make the necessary simplifying assumptions"
+2 "If you're working on a project of a certain complexity, you do not need to tick off all of the items on the attached checklist."
 
-First things first, let's grab 
+ Project includes at least one feature that we did not cover in class! There are many examples: “I used ggmap; I created a decision tree; I ranked the results; I created my presentation slides directly from R; I figured out to use OAuth 2.0…”
+
+ Presentation. Did you show (at least) one challenge you encountered in code and/or data, and what you did when you encountered that challenge? If you didn’t encounter any challenges, your assignment was clearly too easy for you!
+
+ Presentation. Did the audience come away with a clear understanding of your motivation for undertaking the project?
+
+ Presentation. Did the audience come away with a clear understanding of at least one insight you gained or conclusion you reached or hypothesis you “confirmed” (rejected or failed to reject…)?
+
+* * * * * * * * * * * * * *
+Andy's feedback to the proposal
+
+I'll look forward to seeing what you do here.  Certainly trying to spread rumors to influence market caps pre-dates the Internet.  Usually it was only done with "penny stocks."  Also, does change in valuation run counter to general changes in market indexes, are their lags, does instrument price bounce back after time, etc.  Lots you could do here.
+
+* * * * * * * * * * * * * *
+-->
+
+<br>
+
+* * *
+
+<img src="https://image-cdn.hypb.st/https%3A%2F%2Fhypebeast.com%2Fimage%2F2021%2F01%2Fwallstreetbets-discord-banned-subreddit-goes-offline-info-1.jpg?q=80&w=1000&cbr=1&fit=max" alt="Numbers and symbols related to a trading market in orange, green, white and red" style="max-height: 600px; max-width: 600px;">
+
+#### Cris Faga/Nurphoto/Getty Images, [hypebeast.com/wallstreetbets-discord-banned-subreddit-goes-offline](https://hypebeast.com/2021/1/wallstreetbets-discord-banned-subreddit-goes-offline-info)
+
+<br>
+
+* * *
+
+# Part 1 - Introduction
+
+### Abstract
+
+We've built a rudimentary hype index based on the conversations posted in the "r/WallStreetBets" subreddit (WSB).  To do so we've scrapped conversations from WSB, analyzed for sentiment and calculated a metric for hype.
+
+WSB became famous with the unprecedented stock surge for GameStop caused by viral trading.  This phenomenon went on to benefit companies that benefited from the hype generated in their stock by WSB, included Hertz and AMC.
+
+We are not addressing if there is any predictive value in applying sentiment analysis, but rather demonstrating a rudimentary measurement of hype surrounding a stock.
+
+<br>
+
+#### Motivation for doing this work
+
+Completing similar social listening across multiple social media platforms could identify future viral trading phenomenons, or become a valuation component for stock analysts using hype to measure positive regard for a stock among retail investors.
+
+<br>
+
+#### Question we're seeking to answer
+
+Can we demonstrate a rudimentary measurement of hype surrounding a stock?  What did we succeed in and what could be improved?  How can we extend this measurement for future projects?
+
+<br>
+
+#### Where we're sourcing our data
+
+We're using two primary data sources:  
+
+ - text  
+    + Conversational data scraped from WSB for sentiment analysis  
+    + [reddit.com/r/wallstreetbets](https://www.reddit.com/r/wallstreetbets/)  
+    
+ - numeric  
+    + Historical stock prices from NASDAQ for comparison to changes in sentiment  
+    + [nasdaq.com/market-activity/quotes](https://www.nasdaq.com/market-activity/quotes/historical)  
+
+<br>
+
+#### Overall project flow
+
+Our project write up is organized by OSEMN (pronounced "awesome"), the acronym for **Obtain**, **Scrub**, **Explore**, **Model**, and **iNterpret**.
+
+<br>
+
+#### Roles and Responsibilities
+
+Every member of the team attempted all parts of the project.  We combined our efforts to complete the project.
+
+<br>
+
+* * * 
+
+# Part 2 - Data Collection
+
+**Obtain** Scrub Explore Model iNterpret
+
+As an overview, we are collecting data from posts made to WSB.  As well, we are taking information from the `TTR` package to generate a master list of ticker symbols to search for in the posts.
+
+<br>
+
+
+<H2> Libraries </H2>
+
   1. RedditExtractoR for scraping reddit posts 
   2. ttr for quant trading info & ticker lists
   3. BatchGetSymbols for symbol look up
@@ -44,36 +140,50 @@ library(ggplot2)
 library(plotly)
 library(reshape2)
 
-
-
 library(sentimentr)
-
-
-
-
 ```
-
-
 
 <H1> Getting Started </H1>
 
-First things first we're going to get a codex of all ticker symbols listed on all exchanges. 
 
-Then we are going to get all subthreads on WSB indexed by reddit, sorted by new and set for an hour duration!
+### RedditExtractoR Example
 
-Because I don't know how much power your computer has, I'm going to limit it to 500 total posts!
+As an example of how else you can use the `RedditExtractoR` package, here's code that allows you to extract all posts with the ticker symbol for Apple Stock, AAPL.
+
+```{r}
+# RedditExtractoR example using AAPL         
+z <- find_thread_urls(
+  keywords = "AAPL",
+  sort_by = "new",
+  subreddit = "wallstreetbets",
+  period = "month"
+)
+
+# Pull the underlying comments to the posts
+y <- get_thread_content(urls=z$url)
+```
+
+<br>
+
+Start by building a codex of all ticker symbols listed on all exchanges. 
+
+Then we are going to get all subthreads on WSB indexed by Reddit, sorted by new and set for an hour duration.
+
+Due to power limitations on some machines, here we will fetch only 500 posts.
 
 ```{r}
  master <- TTR::stockSymbols(exchange = c("AMEX", "NASDAQ", "NYSE", "ARCA", "BATS", "IEX"))[,c('Name', 'Symbol')]
   all_posts <- find_thread_urls(subreddit="wallstreetbets", sort_by="new", period="hour")
   slim_posts <- head(all_posts, n=500L)
 ```
+
 <H1> Creating a corpus </H1>
 
-At this point we have our 500 indexed posts, and we're going to create a corpus out of all of them!
+Obtain **Scrub** Explore Model iNterpret
+
+At this point we have our 500 indexed posts, and we can use them to create a corpus.
 
 From there, we're going to strip numbers and punctuation, and create a window around each of the ticker symbols found in the text. 
-
 
 ```{r}
  slim_posts$index <- 1:nrow(slim_posts)
@@ -88,27 +198,19 @@ From there, we're going to strip numbers and punctuation, and create a window ar
   target <- as.data.frame(x)
   target$sentence = paste(target$pre, target$post)
   target <- merge(target,add_In_Date,by="index")
-  target
+  
+ target$sentence <- str_replace_all(target$sentence, pattern = '[:punct:]',  replacement =" ")
+ target
 ```
 
-<H2> Funkyness correction </H2> 
 
-Because there was some issues with stripping punctuation causing issues in getting sentiment for sentences I threw it through a a punctuation stripper. 
-
-```{r}
-
-target$sentence <- str_replace_all(target$sentence, pattern = '[:punct:]',  replacement =" ")
-
-```
-<H1> Sentiment Break ups </H1>
+<H2> Sentiment Break ups </H2>
 
 At this point we have relatively sanitized data and we will proceed to take the data, run both sides of the window through a sentiment determining routine, and then create a dataframe that has the sentiment, date, and ticker symbol.
 
 
 ```{r}
-#get_sentences(Bravo_Lima$sentence)
 target$sentiment <- sentiment(target$sentence)$sentiment
-
 
 sentimentHolder <- target[c("keyword","date_utc", "sentiment")]
 sentimentHolder = setNames(sentimentHolder, c("ticker", "ref.date","sentiment"))
@@ -120,52 +222,55 @@ sentimentHolder$ref.date = as.Date(sentimentHolder$ref.date)
 sentimentHolder
 ```
 
-
-
-<H1> Getting Price </H1>
-
-
 <H2> Getting the price index </H2> 
 
-At this point we will get the price metrics of all ticker symbols enclosed in the data for a range of the sentiment data minus one day to plus two days!
+Fetch the price metrics of all ticker symbols enclosed in the data. Here, the time range is minus one day to plus two days. We also fetch the sentiment data during this time period.
 
-```{r}
+```{r, message=FALSE}
 max(sentimentHolder$ref.date)+2
 min(sentimentHolder$ref.date)-1
 l.out <- BatchGetSymbols(tickers = unique(sentimentHolder$ticker),
                          first.date = as.Date(min(sentimentHolder$ref.date)),
                         last.date = min(as.Date(max(sentimentHolder$ref.date)+2,Sys.Date())), do.cache=FALSE)
-l.out
+glimpse(l.out)
 priceData <- l.out$df.tickers 
 ```
+
+* * * 
+
+# Part 3 - View Data
+
+Obtain Scrub **Explore** Model iNterpret
+
 <H2> Looking in </H2>
 
-Here we have the sentiment data and the price data as raw dataframes we can poke and prod!
+A glimpse of the sentiment data and the price data:
 
 ```{r}
-priceData
-sentimentHolder
+head(priceData, n=5L)
+head(sentimentHolder, n=5L)
 ```
 <H2> The Merge </H2>
 
-At this point we're going to merge the sentiment with the pricing data. 
+Merge the sentiment with the pricing data. 
 
-We will also create a summary to ensure we didn't create any data integrity issues!
+To ensure that we didn't create any data integrity issues, we will also create a summary.
 
 ```{r}
 mergedData <- merge(priceData, sentimentHolder, all.x = TRUE)
 mergedData$`mean(sentiment)`[is.na(mergedData$`mean(sentiment)`)] <- 0
 mergedData$sentiment <- mergedData$`mean(sentiment)`
 summary(comparedf(mergedData, priceData, by = "ticker"))
-mergedData
+head(mergedData, n=5L)
 ```
-<H1> Plotting </H1> 
 
-Whats life like without some fun plots!
+* * * 
 
-First things first, lets make a basic chart and then create a subplot of it and itself just to ensure I can figure out how to make subplots!
+# Part 4 - Plotting
 
+Obtain Scrub Explore **Model** iNterpret
 
+To help us visualize, create a basic plot of the sentiment measures.
 ```{r}
 dateSentiment <- mergedData[c("ref.date","ticker", "sentiment")]
 t <- ggplot(dateSentiment[dateSentiment$sentiment != 0,]) + aes(x=ref.date, y=sentiment, color = ticker) + geom_boxplot() + stat_summary(fun = "median",
@@ -176,50 +281,62 @@ t <- ggplot(dateSentiment[dateSentiment$sentiment != 0,]) + aes(x=ref.date, y=se
                colour = "red")
 
 plot1 <- ggplotly(t)
-fig <- subplot(plot1, plot1, nrows = 2, shareX = TRUE) %>%  layout(hovermode = "x unified")
-fig
-
+# fig <- subplot(plot1, plot1, nrows = 2, shareX = TRUE) %>%  layout(hovermode = "x unified")
+# fig
+plot1
 ```
-<H1> The Final chart </H1>
 
-At this point, we have a lot of pricing data, along with ticker symbol and sentiment, so let's combine a subset onto one workspace!
+<H1> Overall Plot </H1>
 
-We can easily use price high and low for one chart, along with the asociated sentiment!
+Combine the ticker prices and sentiment into one workspace.
 
-
-We can also make this shiny deployable with a higher degree of flexibility in terms of job post count!
+Incorporate `price.high`, `price.low`, and associated sentiment as subplots that share the date as the x-axis.
 
 
 ```{r}
 datePrice <- mergedData[c("ref.date","ticker", "price.open", "price.close")]
 plot2 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.open, colour = ticker)) +
-  geom_line(show.legend=FALSE)) %>% layout(title = 'Sentiment') 
-plot3 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.close, colour = ticker), show.legend = FALSE) +
-  geom_line(show.legend = FALSE))%>% layout(title = 'Sentiment2') 
+  geom_line(show.legend=FALSE))
 
+plot3 <- ggplotly(ggplot(datePrice, aes(x = ref.date, y = price.close, colour = ticker), show.legend = FALSE) + 
+  geom_line(show.legend = FALSE)) 
+  
 fig <- subplot(plot1, plot2, plot3, nrows = 3, shareX = TRUE) %>%  layout(hovermode = "x unified")
 fig
 ```
 
 
+* * * 
+
+# Part 5 - Conclusion
+
+Obtain Scrub Explore Model **iNterpret**
+
+Ultimately we were able to generate a rudimentary measure of hype by applying sentiment analysis to the WSB posts.
+
+Avenues for future improvement could be to refine the measure of hype into a score for any given day based on all of the activity for that day.  This would lend itself to a time series analysis by price, or price offset by total market performance or market sector performance.
+
+One way to extend this measurement to future projects would be to assess how well the sentiment analysis labeled the posts.  For instance a manual labeling of posts along with a document term matrix could identify additional phrases, like 'to the moon', or 'stonk', not recognized by standard sentiment packages.
+
+### Challenges
+
+One challenge we had with the code was that by working on different platforms (Windows/Mac; Firefox/Chrome) it meant our code was not always interchangeable.  One way we could have addressed that would have been to do each of our initial coding in dockers.
+
+* * *
+
 <H1> References </H1>
 
 
-
-First things first, there are a billion pages of R documentation that made this totally possible:
-
-https://shiny.rstudio.com/tutorial/
-https://shiny.rstudio.com/reference/shiny/1.0.4/downloadButton.html
-https://cran.r-project.org/web/packages/quanteda/quanteda.pdf
-https://cran.r-project.org/web/packages/SnowballC/index.html
-https://cran.r-project.org/web/packages/BatchGetSymbols/index.html
-https://cran.r-project.org/web/packages/sentimentr/sentimentr.pdf
-https://cran.r-project.org/web/packages/arsenal/index.html
-https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf
-https://cran.r-project.org/web/packages/lubridate/index.html
-
-
-Not to mention Yahoo for the financial data
++ https://shiny.rstudio.com/tutorial/
++ https://shiny.rstudio.com/reference/shiny/1.0.4/downloadButton.html
++ https://cran.r-project.org/web/packages/quanteda/quanteda.pdf
++ https://cran.r-project.org/web/packages/SnowballC/index.html
++ https://cran.r-project.org/web/packages/BatchGetSymbols/index.html
++ https://cran.r-project.org/web/packages/sentimentr/sentimentr.pdf
++ https://cran.r-project.org/web/packages/arsenal/index.html
++ https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf
++ https://cran.r-project.org/web/packages/lubridate/index.html
++ https://finance.yahoo.com/
 
 
 Please also check out the shiny app included in this!
